@@ -148,6 +148,7 @@ class AdminRoute extends Component {
                                     values={this.state.child}
                                     handleTextChange={this.handleTextChange}
                                     addNewParagraph={this.addNewParagraph}
+                                    deleteParagraph={this.deleteParagraph}
                                     handleFormSubmit={this.handleFormSubmit}
                                 />}
                                 />
