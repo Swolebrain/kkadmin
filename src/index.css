@@ -19,3 +19,7 @@ code {
     align-items: stretch;
     flex-direction: column;
 }
+
+a{
+    text-decoration: none;
+}

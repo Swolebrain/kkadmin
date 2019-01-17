@@ -9,7 +9,7 @@ class Auth {
     auth0 = new auth0.WebAuth({
         domain: 'kiddiekredit.auth0.com',
         clientID: 'LVfVnJg9zngBlm5fIPkAPsZO5wyveh1z',
-        redirectUri: 'http://localhost:3000/callback',
+        redirectUri: window.location.href.indexOf('localhost') === -1 ? 'http://kkadmin.s3-website-us-east-1.amazonaws.com/callback' : 'http://localhost:3000/callback',
         responseType: 'token id_token',
         scope: 'openid'
     });

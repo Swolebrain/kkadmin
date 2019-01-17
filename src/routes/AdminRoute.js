@@ -6,7 +6,11 @@ import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
 import TextField from '@material-ui/core/TextField';
 import Snackbar from '@material-ui/core/Snackbar';
+import Fab from '@material-ui/core/Fab';
 import auth from '../Authorization';
+import EditEducationalInfo from "./EditEducationalInfo";
+import {Route, Switch} from "react-router";
+import {Link, NavLink} from "react-router-dom";
 
 const API_URL = 'http://api.kiddiekredit.com:8080/educationalinfo/';
 
@@ -23,20 +27,20 @@ const API_URL = 'http://api.kiddiekredit.com:8080/educationalinfo/';
 class AdminRoute extends Component {
     state = {
         parent: {
-            utilization: '',
-            paymentHistory: '',
-            accountAge: '',
-            numAccounts: '',
-            creditInquiries: '',
-            derogatoryMarks: '',
+            utilization: [''],
+            paymentHistory: [''],
+            accountAge: [''],
+            numAccounts: [''],
+            creditInquiries: [''],
+            derogatoryMarks: [''],
         },
         child: {
-            utilization: '',
-            paymentHistory: '',
-            accountAge: '',
-            numAccounts: '',
-            creditInquiries: '',
-            derogatoryMarks: '',
+            utilization: [''],
+            paymentHistory: [''],
+            accountAge: [''],
+            numAccounts: [''],
+            creditInquiries: [''],
+            derogatoryMarks: [''],
         },
         keys: ['utilization', 'paymentHistory', 'accountAge', 'numAccounts', 'creditInquiries', 'derogatoryMarks'],
         labels: ['Utilization', 'Payment History', 'Account Age', 'Num Accounts', 'Credit Inquiries', 'Derogatory Marks'],
@@ -55,15 +59,40 @@ class AdminRoute extends Component {
             fetch(API_URL + 'parentkreditdashboard', {headers: {Authorization: 'Bearer ' + auth.getIdToken()}}).then(res => res.json()),
             fetch(API_URL + 'kidkreditdashboard', {headers: {Authorization: 'Bearer ' + auth.getIdToken()}}).then(res => res.json())
         ]);
-        if (parent) this.setState(prevState => ({parent}));
-        if (child) this.setState(prevState => ({child}));
+        for (let prop in parent)
+            if (prop !== '_id' && typeof parent[prop] === 'string') parent[prop] = parent[prop].split('|');
+            else delete parent[prop];
+
+        for (let prop in child)
+            if (prop !== '_id' && typeof child[prop] === 'string') child[prop] = child[prop].split('|');
+            else delete child[prop];
+
+        console.log(parent, child);
+
+        if (parent && child) this.setState(() => ({parent, child}));
     }
-    handleTextChange = (group, prop) => (e) => {
+    addNewParagraph = (group, prop) => () => this.setState((prevState) => ({
+        [group]: {
+            ...prevState[group],
+            [prop]: prevState[group][prop].concat([''])
+        }
+    }))
+    deleteParagraph = (group, prop, paragraphIdxToDelete) => () => this.setState((prevState) => ({
+        [group]: {
+            ...prevState[group],
+            [prop]: prevState[group][prop].filter((_, i) => i !== paragraphIdxToDelete)
+        }
+    }))
+    handleTextChange = (group, prop, paragraphNumber) => (e) => {
         const newVal = e.target.value;
         this.setState((prevState) => ({
             [group]: {
                 ...prevState[group],
-                [prop]: newVal
+                [prop]: [
+                    ...prevState[group][prop].slice(0, paragraphNumber),
+                    newVal,
+                    ...prevState[group][prop].slice(paragraphNumber+1),
+                ]
             }
         }))
     }
@@ -72,6 +101,11 @@ class AdminRoute extends Component {
             child: 'kidkreditdashboard',
             parent: 'parentkreditdashboard'
         };
+        const payload = {};
+        for (let key in this.state[kind]){
+            console.log(key);
+            payload[key] = this.state[kind][key].join('|');
+        }
 
         const fetchResult = await fetch(API_URL + routeMap[kind], {
             headers: {
@@ -79,7 +113,7 @@ class AdminRoute extends Component {
                 'Authorization': 'Bearer ' + auth.getIdToken()
             },
             method: 'PUT',
-            body: JSON.stringify(this.state[kind])
+            body: JSON.stringify(payload)
         });
         if (fetchResult.status === 200)
             this.displaySnackBar()
@@ -87,56 +121,48 @@ class AdminRoute extends Component {
             alert('Something went wrong, try again later');
     }
     render() {
-
+        const {pathname} = this.props.location;
         return (
             <Grid container spacing={16} style={{maxWidth: 800, margin: '2rem auto'}}>
                 <Grid item xs={12}>
                     <Card>
                         <CardContent>
-                            <Typography color={"textSecondary"}>
-                                KiddieKredit
+                            <Typography variant={"h5"} component={"h3"}>
+                                Educational Info Administration
                             </Typography>
-                            <Typography variant={"h5"} component={"h2"}>
-                                Educational Info Administration - Parent
-                            </Typography>
-                            <div className={"form-container"}>
-                                {
-                                    this.state.keys.map((attr, idx) => (
-                                        <TextField
-                                            key={attr}
-                                            value={this.state.parent[attr]}
-                                            onChange={this.handleTextChange('parent', attr)}
-                                            multiline
-                                            id={attr}
-                                            label={this.state.labels[idx]}
-                                            margin="normal"
-                                        />
-                                    ))
-                                }
-                            </div>
-                            <Button variant={"contained"} color={'primary'} onClick={this.handleFormSubmit('parent')}>Save Changes</Button>
-                            <br />
-                            <br />
-                            <br />
-                            <Typography variant={"h5"} component={"h2"}>
-                                Educational Info Administration - Child
-                            </Typography>
-                            <div className={"form-container"}>
-                                {
-                                    this.state.keys.map((attr, idx) => (
-                                        <TextField
-                                            key={attr}
-                                            value={this.state.child[attr]}
-                                            onChange={this.handleTextChange('child', attr)}
-                                            multiline
-                                            id={attr}
-                                            label={this.state.labels[idx]}
-                                            margin="normal"
-                                        />
-                                    ))
-                                }
-                            </div>
-                            <Button variant={"contained"} color={'primary'} onClick={this.handleFormSubmit('child')}>Save Changes</Button>
+                            <NavLink to={'/admin'}>
+                                <Button color={pathname === '/admin' ? 'primary' : 'disabled'}>
+                                    Parent
+                                </Button>
+                            </NavLink>
+                            <NavLink to={'/admin/child'}>
+                                <Button color={pathname === '/admin/child' ? 'primary' : 'disabled'}>
+                                    Child
+                                </Button>
+                            </NavLink>
+                            <Switch>
+                                <Route path={'/admin/child'} render={() => <EditEducationalInfo
+                                    formKeys={this.state.keys}
+                                    labels={this.state.labels}
+                                    segmentType={'child'}
+                                    values={this.state.child}
+                                    handleTextChange={this.handleTextChange}
+                                    addNewParagraph={this.addNewParagraph}
+                                    handleFormSubmit={this.handleFormSubmit}
+                                />}
+                                />
+                                <Route path={'/admin'} render={() => <EditEducationalInfo
+                                        formKeys={this.state.keys}
+                                        labels={this.state.labels}
+                                        segmentType={'parent'}
+                                        values={this.state.parent}
+                                        handleTextChange={this.handleTextChange}
+                                        addNewParagraph={this.addNewParagraph}
+                                        deleteParagraph={this.deleteParagraph}
+                                        handleFormSubmit={this.handleFormSubmit}
+                                    />}
+                                />
+                            </Switch>
                         </CardContent>
                     </Card>
                 </Grid>
